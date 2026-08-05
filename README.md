@@ -1,0 +1,122 @@
+# Recall — Offline-First Active Recall & Spaced Repetition
+
+A study app (question bank + active recall + spaced repetition) that works fully
+offline on a single device and syncs across devices once you're back online,
+backed by Supabase.
+
+## Features
+
+- **Question bank** organized by category / subcategory
+- **Active recall study sessions** — pick a category, a question pool, and how
+  many questions to study
+- **Spaced repetition (SM-2-derived)**: questions get scheduled for review
+  based on whether you got them right
+- **Question pool filters**: Smart (due + new), All, Unseen, Wrong, Flagged,
+  Highlighted
+- **Flag** and **highlight** buttons on any question, plus a free-text **notes**
+  box per question
+- **Back button** to revisit a previous question mid-session
+- Per-question badges during study showing why it's in the pool (New, Due,
+  Wrong, Flagged, Highlighted)
+- **Session accuracy** and **overall accuracy** index, plus a stats/progress page
+- **Night mode**
+- **Fully offline** — all data lives locally first (IndexedDB); Supabase sync
+  is best-effort and non-blocking
+- **Offline-first sync across devices** once you sign in with the same account
+  on a second device
+
+## Tech stack
+
+- React + Vite + TypeScript
+- Dexie.js (IndexedDB) for local-first storage, `dexie-react-hooks` for
+  reactive UI
+- Zustand for auth/UI/session state
+- Tailwind CSS v4 (class-based dark mode)
+- Supabase (Postgres + Auth) as the sync backend
+- `vite-plugin-pwa` so the app shell itself (not just data) loads offline
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create a Supabase project
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. In the SQL editor (or via the Supabase CLI), run the migrations in
+   `supabase/migrations/` **in order**:
+   - `0001_schema.sql`
+   - `0002_triggers.sql`
+   - `0003_rls.sql`
+
+   With the Supabase CLI:
+   ```bash
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push
+   ```
+3. Copy `.env.example` to `.env` and fill in your project's URL and anon key
+   (Project Settings → API):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   **Never commit `.env`** — it's already git-ignored.
+
+### 3. Run it
+
+```bash
+npm run dev
+```
+
+Without a configured `.env`, the app still runs fully offline (a "Local
+only" badge appears and sign-in is disabled) — useful for trying it out
+before wiring up Supabase.
+
+### 4. Build
+
+```bash
+npm run build
+```
+
+## How offline + sync works
+
+- Every write (create/edit a question, answer a question, flag/highlight,
+  notes) goes to the local IndexedDB **first** and shows up instantly — no
+  network round-trip required.
+- Each local write is queued in a `syncQueue` table.
+- When online, a sync engine (`src/sync/`) periodically drains that queue up
+  to Supabase, and pulls down anything changed on other devices since the
+  last sync — triggered on login, on reconnect, when the tab regains focus,
+  and every ~45s while online. A manual sync is available by clicking the
+  sync status badge in the top bar.
+- Conflict resolution is last-write-wins on the server-stamped `updated_at`
+  (never the client clock), with an optimistic-concurrency check on push.
+- Deletes are soft (`deleted_at`) so sync can detect them — nothing is ever
+  hard-deleted in Postgres by the client.
+- Signing in on a second device does a full initial pull ("hydration") of
+  everything under that account.
+
+## Project structure
+
+```
+src/
+  auth/            # sign-in/sign-up UI
+  components/       # app shell, sync status indicator
+  db/               # Dexie schema + shared TS types (mirrors the Postgres schema)
+  repositories/      # local read/write layer (categories, questions, SRS state, sessions)
+  lib/               # SM-2 spaced-repetition scheduler, id/time helpers
+  state/              # zustand stores (auth, theme, sync status, active study session)
+  sync/                # push/pull engine talking to Supabase
+  features/
+    categories/         # category tree UI
+    questions/            # question bank management
+    study-setup/            # session configuration screen
+    study-session/            # session runner + summary
+    stats/                     # statistics / progress page
+supabase/
+  migrations/         # schema, triggers, RLS policies
+```
