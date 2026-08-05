@@ -16,13 +16,15 @@ import {
   updateQuestion,
 } from "../../repositories/questionsRepo";
 import type { NewOptionInput } from "../../repositories/questionsRepo";
-import type { QuestionOption } from "../../db/schema";
+import type { QuestionOption, QuestionState } from "../../db/schema";
+import { statesForQuestions, toggleHighlight } from "../../repositories/questionStateRepo";
 
 export function BankPage() {
   const ownerId = useAuthStore((s) => s.user!.id);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [highlightedOnly, setHighlightedOnly] = useState(false);
 
   const categories = useLiveQuery(
     () =>
@@ -66,6 +68,12 @@ export function BankPage() {
     },
     [JSON.stringify((questions ?? []).map((q) => q.id))],
     new Map<string, QuestionOption[]>(),
+  );
+
+  const questionStates = useLiveQuery(
+    () => statesForQuestions(ownerId, (questions ?? []).map((q) => q.id)),
+    [ownerId, JSON.stringify((questions ?? []).map((q) => q.id))],
+    new Map<string, QuestionState>(),
   );
 
   const categoryCount = (categoryId: string) => {
@@ -114,12 +122,24 @@ export function BankPage() {
               : "All questions"}
           </h2>
           {categories && categories.length > 0 && (
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              {showForm ? "Close" : "+ Add question"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setHighlightedOnly((v) => !v)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                  highlightedOnly
+                    ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                }`}
+              >
+                ★ Highlighted only
+              </button>
+              <button
+                onClick={() => setShowForm((v) => !v)}
+                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                {showForm ? "Close" : "+ Add question"}
+              </button>
+            </div>
           )}
         </div>
 
@@ -140,67 +160,87 @@ export function BankPage() {
         )}
 
         <ul className="space-y-2">
-          {(questions ?? []).map((q) => {
-            const opts = optionsByQuestion?.get(q.id) ?? [];
-            const isEditing = editingQuestionId === q.id;
-            return (
-              <li
-                key={q.id}
-                className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
-              >
-                {isEditing ? (
-                  <QuestionForm
-                    categoryName={categories?.find((c) => c.id === q.categoryId)?.name ?? ""}
-                    initialPrompt={q.prompt}
-                    initialExplanation={q.explanation ?? ""}
-                    initialOptions={opts.map((o) => ({ text: o.text, isCorrect: o.isCorrect }))}
-                    onCancel={() => setEditingQuestionId(null)}
-                    onSubmit={(prompt, explanation) => handleEditQuestion(q.id, prompt, explanation)}
-                  />
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{q.prompt}</p>
-                      <div className="flex shrink-0 gap-2 text-xs">
+          {(questions ?? [])
+            .filter((q) => !highlightedOnly || questionStates?.get(q.id)?.isHighlighted)
+            .map((q) => {
+              const opts = optionsByQuestion?.get(q.id) ?? [];
+              const isEditing = editingQuestionId === q.id;
+              const state = questionStates?.get(q.id);
+              const isHighlighted = state?.isHighlighted ?? false;
+              return (
+                <li
+                  key={q.id}
+                  className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900"
+                >
+                  {isEditing ? (
+                    <QuestionForm
+                      categoryName={categories?.find((c) => c.id === q.categoryId)?.name ?? ""}
+                      initialPrompt={q.prompt}
+                      initialExplanation={q.explanation ?? ""}
+                      initialOptions={opts.map((o) => ({ text: o.text, isCorrect: o.isCorrect }))}
+                      onCancel={() => setEditingQuestionId(null)}
+                      onSubmit={(prompt, explanation) => handleEditQuestion(q.id, prompt, explanation)}
+                    />
+                  ) : (
+                    <>
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
                         <button
-                          onClick={() => setEditingQuestionId(q.id)}
-                          className="text-gray-400 hover:text-indigo-600"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => confirm("Delete this question?") && deleteQuestion(q.id)}
-                          className="text-gray-400 hover:text-red-600"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                    <ul className="mt-2 space-y-1">
-                      {opts.map((o) => (
-                        <li
-                          key={o.id}
-                          className={`text-xs ${
-                            o.isCorrect
-                              ? "font-medium text-green-700 dark:text-green-400"
-                              : "text-gray-500 dark:text-gray-400"
+                          onClick={() => state && toggleHighlight(state.id, !state.isHighlighted)}
+                          title="Toggle highlighted"
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
+                            isHighlighted
+                              ? "bg-teal-50 text-teal-600 hover:bg-teal-100 dark:bg-teal-950 dark:text-teal-300"
+                              : "bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
                           }`}
                         >
-                          {o.isCorrect ? "✓ " : "· "}
-                          {o.text}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </li>
-            );
-          })}
+                          {isHighlighted ? "★ Highlighted" : "☆ Not highlighted"}
+                        </button>
+                        <div className="flex shrink-0 gap-2 text-xs">
+                          <button
+                            onClick={() => setEditingQuestionId(q.id)}
+                            className="text-gray-400 hover:text-indigo-600"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => confirm("Delete this question?") && deleteQuestion(q.id)}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{q.prompt}</p>
+                      <ul className="mt-2 space-y-1">
+                        {opts.map((o) => (
+                          <li
+                            key={o.id}
+                            className={`text-xs ${
+                              o.isCorrect
+                                ? "font-medium text-green-700 dark:text-green-400"
+                                : "text-gray-500 dark:text-gray-400"
+                            }`}
+                          >
+                            {o.isCorrect ? "✓ " : "· "}
+                            {o.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </li>
+              );
+            })}
         </ul>
 
-        {questions && questions.length === 0 && categories && categories.length > 0 && (
-          <p className="text-sm text-gray-500">No questions yet in this scope.</p>
-        )}
+        {questions &&
+          questions.filter((q) => !highlightedOnly || questionStates?.get(q.id)?.isHighlighted).length === 0 &&
+          categories &&
+          categories.length > 0 && (
+            <p className="text-sm text-gray-500">
+              {highlightedOnly ? "No highlighted questions in this scope." : "No questions yet in this scope."}
+            </p>
+          )}
       </div>
     </div>
   );
