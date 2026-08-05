@@ -22,6 +22,8 @@ export interface SyncQueueItem {
 export interface SyncMetaRow {
   table: string;
   lastPulledAt: string | null;
+  /** Second half of the pull cursor — see pull.ts. Null on pre-keyset rows. */
+  lastPulledId?: string | null;
   deviceId: string;
 }
 
