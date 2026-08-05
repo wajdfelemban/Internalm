@@ -121,18 +121,18 @@ export function StudySessionPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <div className="mb-3 flex items-center justify-between text-sm text-gray-500">
+      <div className="mb-3 flex flex-col gap-1 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
         <span>
           Question {currentIndex + 1} / {questions.length}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 sm:justify-end">
           <span>
             Session accuracy: {answeredCount > 0 ? `${runningAccuracy}%` : "—"} ({answeredCount} answered)
           </span>
           <button
             onClick={handleEndSession}
             disabled={finishing}
-            className="text-xs font-medium text-gray-400 hover:text-red-600 disabled:opacity-50"
+            className="shrink-0 text-xs font-medium text-gray-400 hover:text-red-600 disabled:opacity-50"
           >
             End session
           </button>
