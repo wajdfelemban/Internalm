@@ -86,6 +86,26 @@ before wiring up Supabase.
 npm run build
 ```
 
+## Deploying (GitHub Pages)
+
+`.github/workflows/deploy.yml` builds and deploys to GitHub Pages automatically
+on every push to `claude/quiz-app-sync-gpbbvy`. One-time setup:
+
+1. **Settings → Pages → Source → GitHub Actions** (on this repo).
+2. **Settings → Secrets and variables → Actions → New repository secret**,
+   add both:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+
+   (same values as your local `.env` — Project Settings → API in Supabase).
+3. Push, or re-run the workflow from the **Actions** tab.
+
+The site is served at `https://<owner>.github.io/<repo>/`, so the build uses
+`BASE_PATH` to prefix all asset/router paths, and `public/404.html` handles
+deep-link refreshes (GitHub Pages has no server-side rewrites for a client-side
+router — it redirects unresolved paths back through `index.html`, which
+restores the original URL before the app mounts).
+
 ## Importing questions
 
 Go to **Import** in the app and either upload your own CSV or click "Load
