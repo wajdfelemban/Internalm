@@ -30,7 +30,7 @@ function AuthedApp() {
 }
 
 function App() {
-  const { session, initializing, init } = useAuthStore();
+  const { session, isLocalOnly, initializing, init } = useAuthStore();
 
   useEffect(() => {
     init();
@@ -45,7 +45,7 @@ function App() {
     );
   }
 
-  if (!session) return <AuthPage />;
+  if (!session && !isLocalOnly) return <AuthPage />;
 
   return <AuthedApp />;
 }

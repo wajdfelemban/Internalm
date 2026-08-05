@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { supabase, isSupabaseConfigured } from "../supabaseClient";
+import { useAuthStore } from "../state/authStore";
 
 export function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -8,6 +9,7 @@ export function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const continueLocalOnly = useAuthStore((s) => s.continueLocalOnly);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -90,6 +92,22 @@ export function AuthPage() {
         >
           {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
         </button>
+
+        <div className="my-4 flex items-center gap-3 text-xs text-gray-400">
+          <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+          or
+          <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+        </div>
+
+        <button
+          onClick={() => continueLocalOnly()}
+          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          Continue without an account
+        </button>
+        <p className="mt-2 text-center text-xs text-gray-400">
+          Data stays on this device only — no sync across devices until you sign in.
+        </p>
       </div>
     </div>
   );

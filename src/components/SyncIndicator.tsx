@@ -1,11 +1,13 @@
 import { useSyncStatusStore } from "../state/syncStatusStore";
 import { isSupabaseConfigured } from "../supabaseClient";
 import { syncNow } from "../sync/useSyncEngine";
+import { useAuthStore } from "../state/authStore";
 
 export function SyncIndicator() {
   const { phase, isOnline, pendingCount, lastError } = useSyncStatusStore();
+  const isLocalOnly = useAuthStore((s) => s.isLocalOnly);
 
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isLocalOnly) {
     return (
       <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
         Local only

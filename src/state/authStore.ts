@@ -3,22 +3,37 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../supabaseClient";
 import { closeDatabase, openDatabaseForUser } from "../db/dexie";
 
+const LOCAL_USER_ID_KEY = "recall-local-user-id";
+
 interface AuthState {
   session: Session | null;
   user: User | null;
+  /** True when using the app without a Supabase account — data stays on this device only. */
+  isLocalOnly: boolean;
   initializing: boolean;
   setSession: (session: Session | null) => void;
   init: () => Promise<void>;
+  continueLocalOnly: () => void;
   signOut: () => Promise<void>;
+}
+
+function getOrCreateLocalUserId(): string {
+  let id = localStorage.getItem(LOCAL_USER_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(LOCAL_USER_ID_KEY, id);
+  }
+  return id;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
+  isLocalOnly: false,
   initializing: true,
 
   setSession: (session) => {
-    set({ session, user: session?.user ?? null });
+    set({ session, user: session?.user ?? null, isLocalOnly: false });
     if (session?.user) {
       openDatabaseForUser(session.user.id);
     } else {
@@ -32,12 +47,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ initializing: false });
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      get().setSession(session);
+      // A real sign-in always takes over from local-only mode.
+      if (session || !get().isLocalOnly) get().setSession(session);
     });
   },
 
+  continueLocalOnly: () => {
+    const id = getOrCreateLocalUserId();
+    const localUser = {
+      id,
+      app_metadata: {},
+      user_metadata: {},
+      aud: "authenticated",
+      created_at: "",
+    } as unknown as User;
+    set({ session: null, user: localUser, isLocalOnly: true, initializing: false });
+    openDatabaseForUser(id);
+  },
+
   signOut: async () => {
-    await supabase.auth.signOut();
-    get().setSession(null);
+    if (!get().isLocalOnly) await supabase.auth.signOut();
+    set({ session: null, user: null, isLocalOnly: false });
+    closeDatabase();
   },
 }));
