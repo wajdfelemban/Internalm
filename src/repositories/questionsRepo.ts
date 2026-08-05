@@ -1,12 +1,15 @@
 import { getDatabase } from "../db/dexie";
-import { newId } from "../lib/id";
-import type { Question, QuestionOption } from "../db/schema";
+import type { SyncQueueItem } from "../db/dexie";
+import { newId, nowIso } from "../lib/id";
+import type { Question, QuestionOption, QuestionState } from "../db/schema";
 import { baseFields, insertRow, softDeleteRow, updateRow } from "./base";
 import { createQuestionState } from "./questionStateRepo";
+import { initialSrsState } from "../lib/srs";
 
 export interface NewOptionInput {
   text: string;
   isCorrect: boolean;
+  explanation?: string | null;
 }
 
 export interface QuestionWithOptions {
@@ -37,6 +40,7 @@ export async function createQuestion(
       text: opt.text,
       isCorrect: opt.isCorrect,
       position: index,
+      explanation: opt.explanation ?? null,
     };
     await insertRow("questionOptions", row);
     optionRows.push(row);
@@ -47,6 +51,91 @@ export async function createQuestion(
   await createQuestionState(ownerId, question.id);
 
   return { question, options: optionRows };
+}
+
+export interface BulkQuestionInput {
+  categoryId: string;
+  prompt: string;
+  explanation: string | null;
+  isHighlighted?: boolean;
+  options: NewOptionInput[];
+}
+
+/**
+ * Batch-creates many questions (e.g. from a CSV import) in a handful of
+ * large Dexie transactions instead of one tiny transaction per row — a
+ * 1000-question import via createQuestion() one row at a time would mean
+ * thousands of sequential awaited transactions.
+ */
+export async function bulkCreateQuestions(
+  ownerId: string,
+  items: BulkQuestionInput[],
+): Promise<{ questionsCreated: number; optionsCreated: number }> {
+  const db = getDatabase();
+  const questions: Question[] = [];
+  const options: QuestionOption[] = [];
+  const states: QuestionState[] = [];
+  const queueItems: Omit<SyncQueueItem, "id">[] = [];
+
+  const enqueue = (table: SyncQueueItem["table"], rowId: string, payload: unknown) => {
+    queueItems.push({ table, rowId, op: "insert", payload, createdAt: nowIso(), attempts: 0 });
+  };
+
+  for (const item of items) {
+    const question: Question = {
+      ...baseFields(ownerId, newId()),
+      categoryId: item.categoryId,
+      prompt: item.prompt,
+      explanation: item.explanation,
+    };
+    questions.push(question);
+    enqueue("questions", question.id, question);
+
+    item.options.forEach((opt, index) => {
+      const option: QuestionOption = {
+        ...baseFields(ownerId, newId()),
+        questionId: question.id,
+        text: opt.text,
+        isCorrect: opt.isCorrect,
+        position: index,
+        explanation: opt.explanation ?? null,
+      };
+      options.push(option);
+      enqueue("questionOptions", option.id, option);
+    });
+
+    const state: QuestionState = {
+      ...baseFields(ownerId, newId()),
+      questionId: question.id,
+      ...initialSrsState(),
+      lastReviewedAt: null,
+      isFlagged: false,
+      isHighlighted: item.isHighlighted ?? false,
+      notes: "",
+      timesSeen: 0,
+      timesCorrect: 0,
+      timesWrong: 0,
+      lastResult: null,
+    };
+    states.push(state);
+    enqueue("questionStates", state.id, state);
+  }
+
+  await db.transaction(
+    "rw",
+    db.questions,
+    db.questionOptions,
+    db.questionStates,
+    db.syncQueue,
+    async () => {
+      await db.questions.bulkAdd(questions);
+      await db.questionOptions.bulkAdd(options);
+      await db.questionStates.bulkAdd(states);
+      await db.syncQueue.bulkAdd(queueItems as SyncQueueItem[]);
+    },
+  );
+
+  return { questionsCreated: questions.length, optionsCreated: options.length };
 }
 
 export async function updateQuestion(

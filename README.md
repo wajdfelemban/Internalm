@@ -6,6 +6,10 @@ backed by Supabase.
 
 ## Features
 
+- **CSV import** — bring in a question bank from a CSV file (`/import`); a
+  bundled sample (947-question SMLE Internal Medicine bank) is included for
+  one-click testing. Categories/subcategories are created automatically, and
+  per-option explanations are preserved if the CSV has them.
 - **Question bank** organized by category / subcategory
 - **Active recall study sessions** — pick a category, a question pool, and how
   many questions to study
@@ -81,6 +85,30 @@ before wiring up Supabase.
 ```bash
 npm run build
 ```
+
+## Importing questions
+
+Go to **Import** in the app and either upload your own CSV or click "Load
+bundled sample" to try it with the included SMLE Internal Medicine question
+bank (`public/seed/smle_questions.csv`, 947 questions).
+
+Expected CSV columns:
+
+```
+Question, Option_A, Option_B, Option_C, Option_D, Answer, Category, subcategory,
+Highlighted, Explanation_A, Explanation_B, Explanation_C, Explanation_D,
+High_Yield_Must_Know, One_Line, Accuracy_Review
+```
+
+- `Answer` — the correct option's letter (`A`/`B`/`C`/`D`), optionally
+  followed by the option text (`"C. Nifedipine"` also works)
+- `Highlighted` — `Highlighted` or `Yes` pre-marks the question as
+  highlighted on import; anything else leaves it unmarked
+- `Explanation_A..D`, `High_Yield_Must_Know`, `One_Line`, `Accuracy_Review`
+  are all optional — omit any of them and the app just won't show that part
+
+Re-importing (or importing a second file) reuses existing categories by name
+instead of creating duplicates.
 
 ## How offline + sync works
 

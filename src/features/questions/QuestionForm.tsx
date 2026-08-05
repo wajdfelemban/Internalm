@@ -28,6 +28,9 @@ export function QuestionForm({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOptionExplanations, setShowOptionExplanations] = useState(
+    () => !!initialOptions?.some((o) => o.explanation),
+  );
 
   function updateOption(index: number, patch: Partial<NewOptionInput>) {
     setOptions((prev) => prev.map((o, i) => (i === index ? { ...o, ...patch } : o)));
@@ -76,33 +79,52 @@ export function QuestionForm({
         className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
       />
 
-      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Answer options (select the correct one)
-      </label>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Answer options (select the correct one)
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowOptionExplanations((v) => !v)}
+          className="text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+        >
+          {showOptionExplanations ? "Hide" : "Add"} per-option explanations
+        </button>
+      </div>
       <div className="mb-3 space-y-2">
         {options.map((opt, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="correct-option"
-              checked={opt.isCorrect}
-              onChange={() => setCorrect(i)}
-              className="h-4 w-4 accent-indigo-600"
-            />
-            <input
-              value={opt.text}
-              onChange={(e) => updateOption(i, { text: e.target.value })}
-              placeholder={`Option ${i + 1}`}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-            />
-            {options.length > 2 && (
-              <button
-                onClick={() => removeOption(i)}
-                className="px-1 text-gray-400 hover:text-red-600"
-                title="Remove option"
-              >
-                ×
-              </button>
+          <div key={i} className="space-y-1">
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="correct-option"
+                checked={opt.isCorrect}
+                onChange={() => setCorrect(i)}
+                className="h-4 w-4 accent-indigo-600"
+              />
+              <input
+                value={opt.text}
+                onChange={(e) => updateOption(i, { text: e.target.value })}
+                placeholder={`Option ${i + 1}`}
+                className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+              />
+              {options.length > 2 && (
+                <button
+                  onClick={() => removeOption(i)}
+                  className="px-1 text-gray-400 hover:text-red-600"
+                  title="Remove option"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            {showOptionExplanations && (
+              <input
+                value={opt.explanation ?? ""}
+                onChange={(e) => updateOption(i, { explanation: e.target.value })}
+                placeholder="Why is this right/wrong? (optional)"
+                className="ml-6 w-[calc(100%-1.5rem)] rounded-lg border border-gray-200 px-3 py-1 text-xs text-gray-600 dark:border-gray-800 dark:bg-gray-800/50 dark:text-gray-400"
+              />
             )}
           </div>
         ))}

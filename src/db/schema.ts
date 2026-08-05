@@ -33,6 +33,8 @@ export interface QuestionOption extends BaseSyncFields {
   text: string;
   isCorrect: boolean;
   position: number;
+  /** Why this specific option is right/wrong — shown under the option after answering. */
+  explanation: string | null;
 }
 
 export type QuestionStatus = "new" | "learning" | "review";

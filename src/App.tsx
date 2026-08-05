@@ -8,6 +8,7 @@ import { StudySetupPage } from "./features/study-setup/StudySetupPage";
 import { StudySessionPage } from "./features/study-session/StudySessionPage";
 import { SessionSummaryPage } from "./features/study-session/SessionSummaryPage";
 import { StatsPage } from "./features/stats/StatsPage";
+import { ImportPage } from "./features/import/ImportPage";
 import { useSyncEngine } from "./sync/useSyncEngine";
 
 function AuthedApp() {
@@ -21,6 +22,7 @@ function AuthedApp() {
         <Route path="/study/session" element={<StudySessionPage />} />
         <Route path="/study/summary/:sessionId" element={<SessionSummaryPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/import" element={<ImportPage />} />
         <Route path="*" element={<Navigate to="/bank" replace />} />
       </Route>
     </Routes>
