@@ -9,10 +9,12 @@ import { StudySessionPage } from "./features/study-session/StudySessionPage";
 import { SessionSummaryPage } from "./features/study-session/SessionSummaryPage";
 import { StatsPage } from "./features/stats/StatsPage";
 import { ImportPage } from "./features/import/ImportPage";
+import { useResumeSession } from "./features/study-session/useResumeSession";
 import { useSyncEngine } from "./sync/useSyncEngine";
 
 function AuthedApp() {
   useSyncEngine();
+  useResumeSession();
   return (
     <Routes>
       <Route element={<AppShell />}>

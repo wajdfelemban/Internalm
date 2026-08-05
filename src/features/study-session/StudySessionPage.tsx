@@ -19,6 +19,7 @@ const TAG_STYLES: Record<string, string> = {
   Wrong: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300",
   Flagged: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300",
   Highlighted: "bg-teal-50 text-teal-600 dark:bg-teal-950 dark:text-teal-300",
+  Mastered: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300",
 };
 
 export function StudySessionPage() {
@@ -106,6 +107,16 @@ export function StudySessionPage() {
     }
   }
 
+  async function handleEndSession() {
+    if (answeredCount < questions.length) {
+      const ok = confirm(
+        `End this session now? You've answered ${answeredCount} of ${questions.length} questions — the rest will be left for another session.`,
+      );
+      if (!ok) return;
+    }
+    await handleFinish();
+  }
+
   const isLast = currentIndex === questions.length - 1;
 
   return (
@@ -114,9 +125,18 @@ export function StudySessionPage() {
         <span>
           Question {currentIndex + 1} / {questions.length}
         </span>
-        <span>
-          Session accuracy: {answeredCount > 0 ? `${runningAccuracy}%` : "—"} ({answeredCount} answered)
-        </span>
+        <div className="flex items-center gap-3">
+          <span>
+            Session accuracy: {answeredCount > 0 ? `${runningAccuracy}%` : "—"} ({answeredCount} answered)
+          </span>
+          <button
+            onClick={handleEndSession}
+            disabled={finishing}
+            className="text-xs font-medium text-gray-400 hover:text-red-600 disabled:opacity-50"
+          >
+            End session
+          </button>
+        </div>
       </div>
 
       <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">

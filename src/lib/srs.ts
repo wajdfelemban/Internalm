@@ -95,3 +95,15 @@ export function isDue(state: Pick<QuestionState, "dueAt" | "status">, now: Date)
   if (!state.dueAt) return false;
   return new Date(state.dueAt).getTime() <= now.getTime();
 }
+
+/**
+ * A question counts as "mastered" once its review interval has grown past
+ * this many days — the same threshold Anki uses for a "mature" card. Long
+ * interval means repeated correct recalls, i.e. it's actually memorized
+ * rather than just recently learned.
+ */
+export const MASTERED_INTERVAL_DAYS = 21;
+
+export function isMastered(state: Pick<QuestionState, "status" | "intervalDays">): boolean {
+  return state.status === "review" && state.intervalDays >= MASTERED_INTERVAL_DAYS;
+}

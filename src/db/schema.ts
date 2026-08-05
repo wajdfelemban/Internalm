@@ -61,11 +61,13 @@ export interface QuestionState extends BaseSyncFields {
 
 export type PoolFilter =
   | "smart"
+  | "due"
   | "all"
   | "unseen"
   | "wrong"
   | "flagged"
-  | "highlighted";
+  | "highlighted"
+  | "mastered";
 
 export interface StudySession extends BaseSyncFields {
   categoryId: string | null;
@@ -95,9 +97,11 @@ export interface Profile {
 
 export const POOL_FILTER_LABELS: Record<PoolFilter, string> = {
   smart: "Smart (Due + New)",
+  due: "Due for review",
   all: "All",
   unseen: "Unseen",
   wrong: "Wrong",
   flagged: "Flagged",
   highlighted: "Highlighted",
+  mastered: "Mastered",
 };

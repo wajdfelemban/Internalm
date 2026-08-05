@@ -2,7 +2,7 @@ import { getDatabase } from "../db/dexie";
 import { newId, nowIso } from "../lib/id";
 import type { PoolFilter, QuestionState } from "../db/schema";
 import { baseFields, insertRow, updateRow } from "./base";
-import { computeSrsUpdate, initialSrsState, isDue } from "../lib/srs";
+import { computeSrsUpdate, initialSrsState, isDue, isMastered } from "../lib/srs";
 
 export async function createQuestionState(
   ownerId: string,
@@ -86,7 +86,7 @@ export async function recordAnswer(
   });
 }
 
-/** Which pools a question currently belongs to — drives the per-question badge shown during study ("New", "Due", "Wrong", "Flagged", "Highlighted"). */
+/** Which pools a question currently belongs to — drives the per-question badge shown during study ("New", "Due", "Wrong", "Flagged", "Highlighted", "Mastered"). */
 export function tagsForState(state: QuestionState | undefined, now: Date = new Date()): string[] {
   if (!state) return ["New"];
   const tags: string[] = [];
@@ -95,6 +95,7 @@ export function tagsForState(state: QuestionState | undefined, now: Date = new D
   if (state.lastResult === "wrong") tags.push("Wrong");
   if (state.isFlagged) tags.push("Flagged");
   if (state.isHighlighted) tags.push("Highlighted");
+  if (isMastered(state)) tags.push("Mastered");
   return tags;
 }
 
@@ -108,6 +109,8 @@ export function matchesPool(
       return true;
     case "smart":
       return !state || state.status === "new" || isDue(state, now);
+    case "due":
+      return !!state && state.status !== "new" && isDue(state, now);
     case "unseen":
       return !state || state.timesSeen === 0;
     case "wrong":
@@ -116,6 +119,8 @@ export function matchesPool(
       return !!state?.isFlagged;
     case "highlighted":
       return !!state?.isHighlighted;
+    case "mastered":
+      return !!state && isMastered(state);
     default:
       return true;
   }

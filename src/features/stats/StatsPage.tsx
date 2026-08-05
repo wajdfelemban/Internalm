@@ -39,7 +39,7 @@ export function StatsPage() {
     <div className="mx-auto max-w-2xl">
       <h2 className="mb-4 text-lg font-semibold">Statistics &amp; progress</h2>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900">
           <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
             {overall ? `${overall.accuracy}%` : "—"}
@@ -63,6 +63,14 @@ export function StatsPage() {
             {counts ? counts.smart : "—"}
           </div>
           <div className="text-xs text-gray-500">Due + new right now</div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900">
+          <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+            {counts && counts.all > 0 ? `${Math.round((counts.mastered / counts.all) * 100)}%` : "—"}
+          </div>
+          <div className="text-xs text-gray-500">
+            Mastered index{counts ? ` (${counts.mastered}/${counts.all})` : ""}
+          </div>
         </div>
       </div>
 

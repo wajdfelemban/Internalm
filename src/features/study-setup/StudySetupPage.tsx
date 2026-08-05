@@ -18,7 +18,16 @@ import {
 } from "../../repositories/sessionsRepo";
 import { listOptionsForQuestions } from "../../repositories/questionsRepo";
 
-const POOL_FILTERS: PoolFilter[] = ["smart", "all", "unseen", "wrong", "flagged", "highlighted"];
+const POOL_FILTERS: PoolFilter[] = [
+  "smart",
+  "due",
+  "all",
+  "unseen",
+  "wrong",
+  "flagged",
+  "highlighted",
+  "mastered",
+];
 
 export function StudySetupPage() {
   const ownerId = useAuthStore((s) => s.user!.id);

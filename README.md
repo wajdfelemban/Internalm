@@ -15,13 +15,18 @@ backed by Supabase.
   many questions to study
 - **Spaced repetition (SM-2-derived)**: questions get scheduled for review
   based on whether you got them right
-- **Question pool filters**: Smart (due + new), All, Unseen, Wrong, Flagged,
-  Highlighted
+- **Question pool filters**: Smart (due + new), Due for review, All, Unseen,
+  Wrong, Flagged, Highlighted, Mastered
 - **Flag** and **highlight** buttons on any question, plus a free-text **notes**
   box per question
-- **Back button** to revisit a previous question mid-session
+- **Back button** to revisit a previous question mid-session, and an **End
+  session** button to stop early and see results for whatever was answered
+- A study session **survives navigating to another page or reloading the
+  tab** — a "resume" banner appears anywhere in the app until it's finished
 - Per-question badges during study showing why it's in the pool (New, Due,
-  Wrong, Flagged, Highlighted)
+  Wrong, Flagged, Highlighted, Mastered)
+- **Mastered index** — a question counts as mastered once its review interval
+  passes 21 days (repeated correct recalls), tracked on the Stats page
 - **Session accuracy** and **overall accuracy** index, plus a stats/progress page
 - **Night mode**
 - **Fully offline** — all data lives locally first (IndexedDB); Supabase sync

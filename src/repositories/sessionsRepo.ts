@@ -17,11 +17,13 @@ function shuffle<T>(arr: T[]): T[] {
 
 const ALL_POOL_FILTERS: PoolFilter[] = [
   "smart",
+  "due",
   "all",
   "unseen",
   "wrong",
   "flagged",
   "highlighted",
+  "mastered",
 ];
 
 /** How many questions match each pool filter, for the study-setup screen. */
@@ -113,9 +115,16 @@ export async function recordSessionAnswer(
     answeredAt: nowIso(),
   };
   await insertRow("sessionAnswers", answer);
+
+  // Re-read the session row rather than trusting the caller's (possibly
+  // stale, e.g. from a store that isn't refreshed per-answer) counts —
+  // otherwise each answer after the first overwrites correctCount/totalCount
+  // instead of accumulating.
+  const db = getDatabase();
+  const current = (await db.studySessions.get(session.id)) ?? session;
   await updateRow<StudySession>("studySessions", session.id, {
-    correctCount: session.correctCount + (isCorrect ? 1 : 0),
-    totalCount: session.totalCount + 1,
+    correctCount: current.correctCount + (isCorrect ? 1 : 0),
+    totalCount: current.totalCount + 1,
   });
   return answer;
 }
