@@ -11,7 +11,10 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  # Scoped per ref rather than a bare "pages": a run that wedges in GitHub's
+  # queue holds its group and cannot always be cancelled, which then blocks
+  # every later run from starting at all.
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
