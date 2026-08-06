@@ -8,6 +8,10 @@
 
 html {
   color-scheme: light dark;
+  /* iOS Safari inflates text inside columns it considers narrow, which made
+     question prompts render far larger than their surroundings on phones. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {

@@ -121,22 +121,20 @@ export function StudySessionPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <div className="mb-3 flex flex-col gap-1 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-        <span>
+      <div className="mb-3 flex items-center justify-between gap-2 text-sm text-gray-500">
+        <span className="min-w-0 truncate">
           Question {currentIndex + 1} / {questions.length}
+          <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
+          {answeredCount > 0 ? `${runningAccuracy}%` : "—"}
+          <span className="hidden sm:inline"> accuracy ({answeredCount} answered)</span>
         </span>
-        <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <span>
-            Session accuracy: {answeredCount > 0 ? `${runningAccuracy}%` : "—"} ({answeredCount} answered)
-          </span>
-          <button
-            onClick={handleEndSession}
-            disabled={finishing}
-            className="shrink-0 text-xs font-medium text-gray-400 hover:text-red-600 disabled:opacity-50"
-          >
-            End session
-          </button>
-        </div>
+        <button
+          onClick={handleEndSession}
+          disabled={finishing}
+          className="shrink-0 text-xs font-medium text-gray-400 hover:text-red-600 disabled:opacity-50"
+        >
+          End session
+        </button>
       </div>
 
       <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
@@ -154,10 +152,12 @@ export function StudySessionPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <p className="text-base font-medium text-gray-900 dark:text-gray-100">{question.prompt}</p>
-          <div className="flex shrink-0 gap-1">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 sm:p-5">
+        <div className="mb-4 after:block after:clear-both after:content-['']">
+          {/* Floated rather than a flex sibling: a long prompt wraps around the
+              buttons for the first line or two and then reclaims the full card
+              width, instead of every line being squeezed into a narrow column. */}
+          <div className="float-right ml-2 flex gap-1">
             <button
               title="Flag this question"
               onClick={() => state && toggleFlag(state.id, !state.isFlagged)}
@@ -181,6 +181,7 @@ export function StudySessionPage() {
               ★
             </button>
           </div>
+          <p className="text-base font-medium text-gray-900 dark:text-gray-100">{question.prompt}</p>
         </div>
 
         <div className="space-y-2">
